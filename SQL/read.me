@@ -1,1 +1,41 @@
+Cleaning Up the Layoffs Mess - My SQL Project
+Alright, so I got my hands on this layoffs dataset, and let's just say it was a bit of a mess. My main goal was to actually make sense of it all, clean it up, and get it ready for some cool data analysis without getting weird results because of messy data.
 
+Here's how I tackled it.
+
+My Game Plan
+First off, I'm not crazy enough to work on the original data. So, I made a copy called layoffs_og to use as my personal sandbox. To be extra safe, I did all the real cleaning work on a second copy, layoffs_og2. Safety first, right?
+
+The whole process basically broke down into four main steps.
+
+Step 1: Kicking Out the Duplicates
+The first thing I noticed was a bunch of duplicate rows. Some companies were listed multiple times with the exact same info, which is just annoying and would skew any analysis.
+
+Finding Them: I used a cool window function, ROW_NUMBER(), to give each row a number. I told it to partition by literally every column, so if a row was an exact copy of another, it would get a number like 2, 3, etc. Anything with a number greater than 1 was a duplicate.
+
+Deleting Them: MySQL is a bit funny; you can't just delete from that ROW_NUMBER() result directly. So, my workaround was to create that new layoffs_og2 table, dump all the data plus my new row numbers into it, and then just run a simple DELETE command to get rid of any row where the number was greater than 1. Boom, duplicates gone.
+
+Step 2: Making the Data Make Sense (Standardization)
+Next up was fixing the inconsistencies. It felt like everyone who entered the data had their own special way of spelling things.
+
+Weird Spaces: Some company names had extra spaces at the beginning or end. TRIM() to the rescue.
+
+Industry Chaos: The industry column was a wild west. I saw 'Crypto', 'Crypto Currency', and 'crypto'. I just forced them all to be 'Crypto' to keep it simple.
+
+Country Names: Same thing for countries. 'United States.' with a period at the end? Nah. Cleaned that up.
+
+Date Drama: The dates were stored as text, which is a big no-no if you want to sort or do anything time-based. I used STR_TO_DATE() to convert that text into a real DATE format that SQL can actually understand.
+
+Step 3: Filling in the Blanks (Handling Nulls)
+Now for the empty spots. The industry column was missing for a bunch of companies, but sometimes the same company had its industry listed correctly in another row.
+
+The Fix: I did a little self-join magic. I basically told SQL, "Hey, if you find a company with a missing industry here, look for that same company elsewhere in the table, grab its industry, and fill in the blank." Worked like a charm. I also changed any blank '' entries to NULL first to make them easier to catch.
+
+Step 4: The Final Chop
+Last part of the cleanup, getting rid of stuff I just didn't need.
+
+Useless Rows: Some rows had no data for either the total number of people laid off or the percentage. That's pretty useless for what I want to do, so I just deleted them. Bye-bye.
+
+That Extra Column: Remember that num column I made for finding duplicates? Served its purpose, but I don't need it anymore. Dropped it from the table to keep things tidy.
+
+The layoffs_og2 table is now clean, standardized, and ready for some actual data analysis. No more weird duplicates or messy text to worry about.
